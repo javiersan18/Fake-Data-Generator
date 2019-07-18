@@ -1,11 +1,23 @@
+import json
 from .kafka_producer import KafkaProducer
-
-KAFKA_CONFIGUTRATION_JSON_FILE = 'kafka_producer.json'
 
 
 class Producer:
-    def __init__(self, user_config):
-        self.kafka_producer = KafkaProducer(user_config)
+
+    def __init__(self, config):
+        self.config = config
+        self.kafka_producer = KafkaProducer(self.config)
+
+    @classmethod
+    def fromfilename(cls, filename):
+        with open(filename) as f:
+            cls.config = json.load(f)
+            cls.kafka_producer = KafkaProducer(cls.config)
+
+    @classmethod
+    def fromdict(cls, datadict):
+        cls.config = datadict
+        cls.kafka_producer = KafkaProducer(cls.config)
 
     def send(self, value, key=None, param="", filename=None, custom_topic=None, kafka_partitioner=None):
         self.kafka_producer.send(value=value, key=key, custom_topic=custom_topic, kafka_partitioner=kafka_partitioner)

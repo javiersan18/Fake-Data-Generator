@@ -17,9 +17,9 @@ class KafkaProducer:
     def get_kafka_producer(self):
         # return a producer instance
         # :param: producer configuration
-        self._properties['error_cb'] = self.utils.error_cb
-        self.add_property("bootstrap.servers", self._config.get('bootstrap_servers'))
-        # self.add_property("schema.registry.url", self._config.get('schema_registry'))
+        self._properties["error_cb"] = self.error_cb
+        self._properties["bootstrap.servers"] = self._config.get('bootstrap.servers')
+        self._properties["schema.registry.url"] = self._config.get('schema.registry')
         # if self._config.get('security_protocol') != 'None':
         #     self.add_property("security.protocol", self._config.get('security_protocol'))
         #     self.add_property("ssl.key.password", self._config.get('kafka-cert-password'))
@@ -30,7 +30,7 @@ class KafkaProducer:
             value_schema = avro.loads(self._AVRO_SCHEMA_VALUE)
             producer = AvroProducer(self._properties, default_key_schema=key_schema, default_value_schema=value_schema)
         else:
-            producer = Producer(self.properties)
+            producer = Producer(self._properties)
 
         return producer
 
@@ -39,9 +39,8 @@ class KafkaProducer:
         source_type = self._config.get(self._SOURCE_TYPE)
         partition = self.get_partition_from_source(param=param)  # Obtain dataloha partition from dictionary
 
-        #TODO revisar
         (key, value) = self.utils.getKeyValue(key, value, self._config)
-        #TODO partition
+
         if source_type == self._SOURCE_TYPE_FOLDER:
             self.send_folder(topic, value, key, partition)
         elif source_type == self._SOURCE_TYPE_FILE:
@@ -61,7 +60,7 @@ class KafkaProducer:
 
 
     def send_folder(self, topic, value, key=None, partition=None):
-        ''' 
+        '''
         get all the files contained in a folder
         '''
         files = self.utils.getFiles(value)        
@@ -87,8 +86,6 @@ class KafkaProducer:
             self.flush(True)
         except KafkaException as e:
             self.log.error("An error was encountered while producing a kafka message: %s", str(e.args[0]))
-            # self.dlh.log.debug("Retrying producing kafka message ...")
-            # time.sleep(retry_interval)
 
     def send_value(self, topic, value, key=None, partition=None, flush=True):
         try:  
@@ -96,11 +93,8 @@ class KafkaProducer:
                                   partition = partition,
                                   callback=(None, self.utils.delivery_callback)[self._config.get(self._DEBUG_MODE)])
             self.flush(flush)
-            #TODO handle broker down
         except KafkaException as e:
             self.log.error("An error was encountered while producing a kafka message: %s", str(e.args[0]))
-            #self.dlh.log.debug("Retrying producing kafka message ...")
-            #time.sleep(retry_interval)
 
     def flush(self, flush):
         if flush:
@@ -109,16 +103,10 @@ class KafkaProducer:
             self.producer.flush()
 
     def prepare_value(self, value):
-        #if self._config.get('data_type') == 'application/json':
         if self._config.get('avro_producer') and self._config.get('schema_registry'):
             return value
         else:
             return json.dumps(value)
-        #elif self._config.get('data_type') == 'text/csv':
-        #    return value
-        #else:
-        #    #TODO: XML or exception
-        #    return "Error"
 
     def prepare_key(self, key):
         if self._config.get('avro_producer') and self._config.get('schema_registry'):
@@ -127,22 +115,21 @@ class KafkaProducer:
             return json.dumps(key)
 
     def error_cb(self, err):
-        print('error_cb --------> {}'.format(err))
+        self.log.error('ERROR_CB --> {}'.format(err))
         if err.code() == KafkaError._ALL_BROKERS_DOWN:
             raise ValueError('ERROR: all brokers down...')
         else:
             print(err.code())
             raise ValueError(err.code())
 
+    # Optional per-message delivery callback (triggered by poll() or flush())
+    # when a message has been successfully delivered or permanently
+    # failed delivery (after retries).
     def delivery_callback(self, err, msg):
-        '''
-        Called once for each message produced to indicate delivery result.
-        Triggered by poll() or flush().
-        '''
-        if err is not None:
-            print('Message {} delivery failed: {}'.format(msg.value(), err))
+        if err:
+            self.log.error('Message {} delivery failed: {}'.format(msg.value(), err))
         else:
-            print('Message {} delivered to {} [{}]'.format(msg.value(), msg.topic(), msg.partition()))
+            self.log.debug('Message {} delivered to {} [{}] Offset: {}'.format(msg.value(), msg.topic(), msg.partition(), msg.offset()))
 
 
 # Monkey patch to get hashable avro schemas
