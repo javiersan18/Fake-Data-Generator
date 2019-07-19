@@ -1,6 +1,6 @@
 {
   "client.id":"Fake-Data-Generator",
-  "bootstrap.servers":"",
+  "bootstrap.servers":"localhost:9092",
   "security.protocol":"plaintext",
   "ssl.certificate.location":"",
   "ssl.ca.location":"",
