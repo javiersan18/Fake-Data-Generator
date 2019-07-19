@@ -1,14 +1,7 @@
 import time
-import datetime
 import argparse
-import numpy
-import random
-from faker import Faker
 from kafka.producer import Producer
 from generator.data_generator import DataGenerator
-from generator.templates.credit_card_template import CreditCardTemplate
-from tzlocal import get_localzone
-local = get_localzone()
 
 
 def main():
@@ -44,52 +37,27 @@ def main():
 
     print(parser.parse_args())
     args = parser.parse_args()
-    faker = Faker()
+    if args.seconds > 0:
+        infinite = True
+    else:
+        infinite = False
 
     # Generate LOGS
     if 'log_file_path' in args:
+
         timestr = time.strftime('%Y%m%d-%H%M%S')
-        otime = datetime.datetime.now()
         output_file_name = 'access_log_' + timestr + '.log'
         f = open(args.log_file_path + '/' + output_file_name, 'w')
 
-        http_response = ['200', '404', '500', '301']
-        http_verb = ['GET', 'POST', 'DELETE', 'PUT']
-        endpoints = ['/clients', '/farms', '/containers', '/routes', '/installations', '/incidences']
-        ualist = [faker.firefox, faker.chrome, faker.safari, faker.internet_explorer, faker.opera]
+        from generator.templates.apache_logs_template import ApacheLogsTemplate
+        gen = DataGenerator(ApacheLogsTemplate(type="CLF"))
 
-        flag = True
-        while flag:
-
-            increment = datetime.timedelta(seconds=args.seconds)
-            otime += increment
-
+        while infinite:
             for i in range(args.num_lines):
-                otime += datetime.timedelta(microseconds=10)
-
-                ip = faker.ipv4()
-                dt = otime.strftime('%d/%b/%Y:%H:%M:%S')
-                tz = datetime.datetime.now(local).strftime('%z')
-                vrb = numpy.random.choice(http_verb, p=[0.6, 0.1, 0.1, 0.2])
-
-                uri = random.choice(endpoints)
-
-                resp = numpy.random.choice(http_response, p=[0.9, 0.04, 0.02, 0.04])
-                byt = int(random.gauss(5000, 50))
-                referer = faker.uri()
-                useragent = numpy.random.choice(ualist, p=[0.5, 0.3, 0.1, 0.05, 0.05])()
-
-                if args.log_format == 'CLF':
-                    f.write('%s - - [%s %s] "%s %s HTTP/1.0" %s %s\n' % (ip, dt, tz, vrb, uri, resp, byt))
-                elif args.log_format == 'ELF':
-                    f.write('%s - - [%s %s] "%s %s HTTP/1.0" %s %s "%s" "%s"\n' % (
-                        ip, dt, tz, vrb, uri, resp, byt, referer, useragent))
+                f.write(gen.generate())
                 f.flush()
-
-            if args.seconds > 0:
+            if infinite:
                 time.sleep(args.log_seconds)
-            else:
-                flag = False
 
     # Generate data to send to Kafka
     else:
@@ -106,20 +74,15 @@ def main():
             props["security.protocol"] = "plaintext"
             producer = Producer.fromdict(props)
 
-        generator = DataGenerator(CreditCardTemplate())
+        from generator.templates.credit_card_template import CreditCardTemplate
+        gen = DataGenerator(CreditCardTemplate(delimiter=","))
 
-        flag = True
-        while flag:
-
+        while infinite:
             for i in range(args.num_lines):
-                value = generator.generate()
-                producer.send(topic=topic, value=value, flush=False)
+                producer.send(topic=topic, value=gen.generate(), flush=False)
             producer.flush(True)
-
-            if args.seconds > 0:
+            if infinite:
                 time.sleep(args.seconds)
-            else:
-                flag = False
 
 
 if __name__ == "__main__":
