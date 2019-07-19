@@ -4,6 +4,7 @@ import argparse
 import numpy
 import random
 from faker import Faker
+from kafka.producer import Producer
 from tzlocal import get_localzone
 local = get_localzone()
 
@@ -22,7 +23,14 @@ def main():
 
     # Kafka commands
     create_parser = subparsers.add_parser('kafka', help='Write to Apache Kafka')
-    create_parser.add_argument('--brokers', required=True, action='store', help='Kafka brokers')
+    create_parser.add_argument('-p', '--properties_file', required=False, dest='kafka_props', action='store', help='JSON file with Kafka Producer properties.')
+    create_parser.add_argument('-t', '--topic', required=True,  dest='kafka_topic', action='store', help='Kafka topic')
+    create_parser.add_argument('-b', '--brokers', required=False,  dest='kafka_brokers', action='store', help='List of Kafka brokers')
+    create_parser.add_argument('-sr', '--schema-registry', required=False,  dest='kafka_schema_registry', action='store', help='URL to Schema-Registry')
+    create_parser.add_argument('-n', '--number-lines', dest='log_num_lines', type=int, default=10, action='store',
+                             help='Number of lines to generate (default: 10)')
+    create_parser.add_argument('-e', '--each-seconds', dest='log_seconds', type=float, default=0.0, action='store',
+                             help='If > 0: Write every E seconds.')
 
     print(parser.parse_args())
     args = parser.parse_args()
@@ -65,6 +73,40 @@ def main():
                 elif args.log_format == 'ELF':
                     f.write('%s - - [%s %s] "%s %s HTTP/1.0" %s %s "%s" "%s"\n' % (ip, dt, tz, vrb, uri, resp, byt, referer, useragent))
                 f.flush()
+
+            if args.log_seconds > 0:
+                time.sleep(args.log_seconds)
+            else:
+                flag = False
+
+    else:
+        topic = args.kafka_topic
+        properties = args.kafka_props if 'kafka_props' in args else None
+        brokers = args.kafka_brokers if 'kafka_brokers' in args else None
+        schema_registry = args.kafka_schema_registry if 'kafka_schema_registry' in args else None
+
+        if properties:
+            producer = Producer.fromfilename(properties)
+        else:
+            props = {}
+            props.setdefault("client.id", "Fake-Data-Generator")
+            props["bootstrap.servers"] = brokers
+            props["security.protocol"] = "plaintext"
+            props["schema.registry"] = schema_registry
+            producer = Producer.fromdict(props)
+
+            from faker.providers import bank
+            from faker.providers import credit_card
+
+            faker.add_provider(bank)
+            faker.add_provider(credit_card)
+
+        flag = True
+        while flag:
+
+            for i in range(args.log_num_lines):
+                value = faker.name() + ',' + faker.iban() + ',' + faker.credit_card_number() + ',' + faker.credit_card_provider()
+                producer.send(topic=topic, value=value)
 
             if args.log_seconds > 0:
                 time.sleep(args.log_seconds)

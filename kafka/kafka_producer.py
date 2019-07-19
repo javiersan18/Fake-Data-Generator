@@ -12,6 +12,7 @@ class KafkaProducer:
     def __init__(self, user_config):
         self.log = logging.getLogger("KafkaProducer")
         self._config = user_config
+        self._properties = {}
         self.producer = self.get_kafka_producer()
 
     def get_kafka_producer(self):
@@ -19,7 +20,7 @@ class KafkaProducer:
         # :param: producer configuration
         self._properties["error_cb"] = self.error_cb
         self._properties["bootstrap.servers"] = self._config.get('bootstrap.servers')
-        self._properties["schema.registry.url"] = self._config.get('schema.registry')
+        # self._properties["schema.registry.url"] = self._config.get('schema.registry')
         # if self._config.get('security_protocol') != 'None':
         #     self.add_property("security.protocol", self._config.get('security_protocol'))
         #     self.add_property("ssl.key.password", self._config.get('kafka-cert-password'))
@@ -34,28 +35,27 @@ class KafkaProducer:
 
         return producer
 
-    def send(self, key=None, value=None, param="", custom_topic="undefined", kafka_partitioner=None):
-        topic = self.topic.format(dataloha_topic=custom_topic)
-        source_type = self._config.get(self._SOURCE_TYPE)
-        partition = self.get_partition_from_source(param=param)  # Obtain dataloha partition from dictionary
+    def send(self, key=None, value=None, param="", topic="undefined", partition=None):
+        #source_type = self._config.get(self._SOURCE_TYPE)
+        #partition = self.get_partition_from_source(param=param)  # Obtain dataloha partition from dictionary
 
-        (key, value) = self.utils.getKeyValue(key, value, self._config)
+        # (key, value) = self.utils.getKeyValue(key, value, self._config)
 
-        if source_type == self._SOURCE_TYPE_FOLDER:
-            self.send_folder(topic, value, key, partition)
-        elif source_type == self._SOURCE_TYPE_FILE:
-            self.send_file(topic, value, key, partition)
-        else:
-            if sys.getsizeof(value) > 1000000:
-                self.send_values(topic, value, key, partition)
+        #if source_type == self._SOURCE_TYPE_FOLDER:
+        #    self.send_folder(topic, value, key, partition)
+        #elif source_type == self._SOURCE_TYPE_FILE:
+        #    self.send_file(topic, value, key, partition)
+        #else:
+         #   if sys.getsizeof(value) > 1000000:
+          #      self.send_values(topic, value, key, partition)
                 # self.send_values(topic, kafka_partitioner(value), key, partition)
-            else:
-                if isinstance(value, (list,)):
-                    self.send_values(topic, value, key, partition)
-                elif isinstance(value, (dict,)):
-                    self.send_value(topic, value, key, partition)
-                else:
-                    self.send_value(topic, value, key, partition)
+         #   else:
+        #        if isinstance(value, (list,)):
+        #            self.send_values(topic, value, key, partition)
+        #        elif isinstance(value, (dict,)):
+        #            self.send_value(topic, value, key, partition)
+        #        else:
+        self.send_value(topic, value, key, partition)
 
 
 
@@ -87,11 +87,9 @@ class KafkaProducer:
         except KafkaException as e:
             self.log.error("An error was encountered while producing a kafka message: %s", str(e.args[0]))
 
-    def send_value(self, topic, value, key=None, partition=None, flush=True):
+    def send_value(self, topic, value, key=None, partition=0, flush=True):
         try:  
-            self.producer.produce(topic=topic, value=self.prepare_value(value), key=self.prepare_key(key),
-                                  partition = partition,
-                                  callback=(None, self.utils.delivery_callback)[self._config.get(self._DEBUG_MODE)])
+            self.producer.produce(topic=topic, value=self.prepare_value(value), key=self.prepare_key(key),  callback=self.delivery_callback)
             self.flush(flush)
         except KafkaException as e:
             self.log.error("An error was encountered while producing a kafka message: %s", str(e.args[0]))
