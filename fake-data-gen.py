@@ -5,8 +5,9 @@ import numpy
 import random
 from faker import Faker
 from kafka.producer import Producer
+from generator.data_generator import DataGenerator
+from generator.templates.credit_card_template import CreditCardTemplate
 from tzlocal import get_localzone
-
 local = get_localzone()
 
 
@@ -45,6 +46,7 @@ def main():
     args = parser.parse_args()
     faker = Faker()
 
+    # Generate LOGS
     if 'log_file_path' in args:
         timestr = time.strftime('%Y%m%d-%H%M%S')
         otime = datetime.datetime.now()
@@ -89,6 +91,7 @@ def main():
             else:
                 flag = False
 
+    # Generate data to send to Kafka
     else:
         topic = args.kafka_topic
         properties = args.kafka_props if 'kafka_props' in args else None
@@ -103,17 +106,13 @@ def main():
             props["security.protocol"] = "plaintext"
             producer = Producer.fromdict(props)
 
-        from faker.providers import bank
-        from faker.providers import credit_card
-
-        faker.add_provider(bank)
-        faker.add_provider(credit_card)
+        generator = DataGenerator(CreditCardTemplate())
 
         flag = True
         while flag:
 
             for i in range(args.num_lines):
-                value = faker.name() + ',' + faker.iban() + ',' + faker.credit_card_number() + ',' + faker.credit_card_provider()
+                value = generator.generate()
                 producer.send(topic=topic, value=value, flush=False)
             producer.flush(True)
 
