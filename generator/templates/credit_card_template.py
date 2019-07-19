@@ -1,4 +1,4 @@
-from ..data_template import DataTemplate
+from generator.templates.data_template import DataTemplate
 from faker.providers import bank
 from faker.providers import credit_card
 

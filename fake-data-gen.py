@@ -57,7 +57,7 @@ def main():
                 f.write(gen.generate())
                 f.flush()
             if infinite:
-                time.sleep(args.log_seconds)
+                time.sleep(args.seconds)
 
     # Generate data to send to Kafka
     else:

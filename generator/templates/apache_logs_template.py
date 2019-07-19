@@ -1,12 +1,9 @@
-
-import time
 import numpy
 import random
 import datetime
-from ..data_template import DataTemplate
+from generator.templates.data_template import DataTemplate
 from tzlocal import get_localzone
 local = get_localzone()
-
 
 
 class ApacheLogsTemplate(DataTemplate):

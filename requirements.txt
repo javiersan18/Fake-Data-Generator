@@ -1,6 +1,6 @@
 numpy==1.16.4
 Faker==2.0.0
 tzlocal==1.5.1
-confluent-kafka=1.1.0
-avro-python3=1.9.0
-requests=2.22.0
+confluent_kafka==1.1.0
+avro-python3==1.9.0
+requests==2.22.0
