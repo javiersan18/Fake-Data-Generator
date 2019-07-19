@@ -4,7 +4,7 @@ This script generates finite or infinite fake apache logs or fake Bank and Credi
 Its useful for generating fake data to test Big Data tools like Apache Flume, Apache Kafka, Apache Spark-Streaming and connecting all of them together.
 
 
-It is inspired (fork) by the work of [Fake-Apache-Log-Generator](https://github.com/kiritbasu/Fake-Apache-Log-Generator) and utilizes the library [Faker](https://github.com/joke2k/faker/) library to generate realistic data.
+It is inspired (fork) by the work of [Fake-Apache-Log-Generator](https://github.com/kiritbasu/Fake-Apache-Log-Generator) and utilizes the [Faker](https://github.com/joke2k/faker/) library to generate realistic data.
 
 ***
 
