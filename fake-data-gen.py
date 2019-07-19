@@ -14,23 +14,29 @@ def main():
     subparsers = parser.add_subparsers(help='Data destination')
 
     # Logs commands
-    list_parser = subparsers.add_parser('log', help='Generate Apache Logs')
-    list_parser.add_argument('-o', '--output-path', required=True, dest='log_file_path', action='store', type=str, help='Log path')
-    list_parser.add_argument('-n', '--number-lines', dest='log_num_lines', type=int, default=10, action='store', help='Number of lines to generate (default: 10)')
-    list_parser.add_argument('-e', '--each-seconds', dest='log_seconds', type=float, default=0.0, action='store', help='If > 0: Write every E seconds.')
-    list_parser.add_argument('-f', '--log-format', dest='log_format', help='Log format, Common or Extended Log Format ',
+    log_parser = subparsers.add_parser('log', help='Generate Apache Logs')
+    log_parser.add_argument('-o', '--output-path', required=True, dest='log_file_path', action='store', type=str, help='Log path')
+    log_parser.add_argument('-n', '--number-lines', dest='num_lines', type=int, default=10, action='store',
+                              help='Number of lines to generate (default: 10)')
+    log_parser.add_argument('-s', '--sleep-loop', dest='seconds', type=float, default=0.0, action='store',
+                              help='Write every SECONDS seconds. If SECONDS>0 infinite loop (default:0.0)')
+    log_parser.add_argument('-f', '--log-format', dest='log_format', help='Log format, Common or Extended Log Format ',
                         choices=['CLF', 'ELF'], default='ELF')
 
     # Kafka commands
-    create_parser = subparsers.add_parser('kafka', help='Write to Apache Kafka')
-    create_parser.add_argument('-p', '--properties_file', required=False, dest='kafka_props', action='store', help='JSON file with Kafka Producer properties.')
-    create_parser.add_argument('-t', '--topic', required=True,  dest='kafka_topic', action='store', help='Kafka topic')
-    create_parser.add_argument('-b', '--brokers', required=False,  dest='kafka_brokers', action='store', help='List of Kafka brokers')
-    create_parser.add_argument('-sr', '--schema-registry', required=False,  dest='kafka_schema_registry', action='store', help='URL to Schema-Registry')
-    create_parser.add_argument('-n', '--number-lines', dest='log_num_lines', type=int, default=10, action='store',
+    kafka_parser = subparsers.add_parser('kafka', help='Write to Apache Kafka')
+    kafka_parser.add_argument('-t', '--topic', required=True,  dest='kafka_topic', action='store', help='Kafka topic')
+    kafka_parser.add_argument('-n', '--number-lines', dest='num_lines', type=int, default=10, action='store',
                              help='Number of lines to generate (default: 10)')
-    create_parser.add_argument('-e', '--each-seconds', dest='log_seconds', type=float, default=0.0, action='store',
-                             help='If > 0: Write every E seconds.')
+    kafka_parser.add_argument('-s', '--sleep-loop', dest='seconds', type=float, default=0.0, action='store',
+                              help='Write every SECONDS seconds. If SECONDS>0 infinite loop (default:0.0)')
+
+    json_group = kafka_parser.add_argument_group(title='JSON file options')
+    cl_group = kafka_parser.add_argument_group(title='Command-line options')
+
+    json_group.add_argument('-p', '--properties_file', required=False, dest='kafka_props', action='store', help='JSON file with Kafka Producer properties.')
+    cl_group.add_argument('-b', '--brokers', required=False,  dest='kafka_brokers', action='store', help='List of Kafka brokers')
+    cl_group.add_argument('-sr', '--schema-registry', required=False,  dest='kafka_schema_registry', action='store', help='URL to Schema-Registry')
 
     print(parser.parse_args())
     args = parser.parse_args()
@@ -50,10 +56,10 @@ def main():
         flag = True
         while flag:
 
-            increment = datetime.timedelta(seconds=args.log_seconds)
+            increment = datetime.timedelta(seconds=args.seconds)
             otime += increment
 
-            for i in range(args.log_num_lines):
+            for i in range(args.num_lines):
                 otime += datetime.timedelta(microseconds=10)
 
                 ip = faker.ipv4()
@@ -104,12 +110,13 @@ def main():
         flag = True
         while flag:
 
-            for i in range(args.log_num_lines):
+            for i in range(args.num_lines):
                 value = faker.name() + ',' + faker.iban() + ',' + faker.credit_card_number() + ',' + faker.credit_card_provider()
-                producer.send(topic=topic, value=value)
+                producer.send(topic=topic, value=value, flush=False)
+            producer.flush(True)
 
             if args.log_seconds > 0:
-                time.sleep(args.log_seconds)
+                time.sleep(args.seconds)
             else:
                 flag = False
 

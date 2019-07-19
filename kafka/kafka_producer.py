@@ -35,7 +35,7 @@ class KafkaProducer:
 
         return producer
 
-    def send(self, key=None, value=None, param="", topic="undefined", partition=None):
+    def send(self, key=None, value=None, param="", topic="undefined", partition=None, flush=False):
         #source_type = self._config.get(self._SOURCE_TYPE)
         #partition = self.get_partition_from_source(param=param)  # Obtain dataloha partition from dictionary
 
@@ -55,7 +55,7 @@ class KafkaProducer:
         #        elif isinstance(value, (dict,)):
         #            self.send_value(topic, value, key, partition)
         #        else:
-        self.send_value(topic, value, key, partition)
+        self.send_value(topic, value, key, partition, flush)
 
 
 
