@@ -1,10 +1,7 @@
-from faker import Faker
-
-
-class SQLConn():
+class SQLConnector:
 
     def __init__(self, host, database, username, password, driver="mysql", port=None, jdbc_url=None):
-        self.jdbc_url = jdbc_url
+        # self.jdbc_url = jdbc_url
         self.driver = driver
         self.host = host
         self.port = port
@@ -21,13 +18,15 @@ class SQLConn():
             'database': self.database
         }
         if self.driver == "mysql":
+            from .mysql_connector import MySQLConnector
             config['port'] = self.port if self.port is not None else '3306'
-            return MySQLConnector.create_connection(config)
+            return MySQLConnector(config)
         elif self.driver == "postgres":
+            from .postgres_connector import PostgreSQLConnector
             config['port'] = self.port if self.port is not None else '5432'
-            return PostgreSQLConnector.create_connection(config)
+            return PostgreSQLConnector(config)
         else:
             print("Error: Driver not supported yet.")
 
     def query_exec(self, query):
-        pass
+        self.conn.exec_query(query)

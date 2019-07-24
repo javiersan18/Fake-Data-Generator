@@ -4,11 +4,11 @@ from mysql.connector import errorcode
 
 class MySQLConnector:
 
-    @classmethod
-    def create_connection(cls, config):
+    def __init__(self, config):
         try:
-            cnx = mysql.connector.connect(**config)
-            return cnx
+            print('Connecting to the PostgreSQL database...')
+            self.connection = mysql.connector.connect(**config)
+            self.cursor = self.connection.cursor()
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 print("Something is wrong with your user name or password")
@@ -16,7 +16,11 @@ class MySQLConnector:
                 print("Database does not exist")
             else:
                 print(err)
-        finally:
-            if cnx is not None:
-                cnx.close()
-                print('Database connection closed.')
+
+    def exec_query(self, query):
+        self.cursor.execute(query)
+        self.connection.commit()
+
+    def close(self):
+        self.cursor.close()
+        self.connection.close()

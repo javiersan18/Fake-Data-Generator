@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import time
 import argparse
 from kafka.producer import Producer
