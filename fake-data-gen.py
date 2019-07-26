@@ -13,48 +13,49 @@ def main():
     # Logs commands
     log_parser = subparsers.add_parser('log', help='Generate Apache Logs')
     log_parser.add_argument('-o', '--output-path', required=True, dest='log_file_path', action='store', type=str,
-                            help='Log path')
+                            help='Log destination file path')
     log_parser.add_argument('-n', '--number-lines', dest='num_lines', type=int, default=10, action='store',
                             help='Number of lines to generate (default: 10)')
     log_parser.add_argument('-s', '--sleep-loop', dest='seconds', type=float, default=0.0, action='store',
-                            help='Write every SECONDS seconds. If SECONDS>0 infinite loop (default:0.0)')
-    log_parser.add_argument('-f', '--log-format', dest='log_format', help='Log format, Common or Extended Log Format ',
+                            help='Write every SECONDS seconds. If SECONDS>0 it will produce an infinite loop (default:0.0)')
+    log_parser.add_argument('-f', '--log-format', dest='log_format',
+                            help='Log format: Common or Extended Log Format (default: ELF)',
                             choices=['CLF', 'ELF'], default='ELF')
 
     # Kafka commands
-    kafka_parser = subparsers.add_parser('kafka', help='Write to Apache Kafka')
+    kafka_parser = subparsers.add_parser('kafka', help='Send to Apache Kafka')
     kafka_parser.add_argument('-t', '--topic', required=True, dest='kafka_topic', action='store', help='Kafka topic')
     kafka_parser.add_argument('-n', '--number-lines', dest='num_lines', type=int, default=10, action='store',
                               help='Number of lines to generate (default: 10)')
     kafka_parser.add_argument('-s', '--sleep-loop', dest='seconds', type=float, default=0.0, action='store',
-                              help='Write every SECONDS seconds. If SECONDS>0 infinite loop (default:0.0)')
+                              help='Write every SECONDS seconds. If SECONDS>0 it will produce an infinite loop (default:0.0)')
 
     json_group = kafka_parser.add_argument_group(title='JSON file options')
     cl_group = kafka_parser.add_argument_group(title='Command-line options')
 
     json_group.add_argument('-p', '--properties_file', required=False, dest='kafka_props', action='store',
-                            help='JSON file with Kafka Producer properties.')
+                            help='JSON file with Kafka Producer properties')
     cl_group.add_argument('-b', '--brokers', required=False, dest='kafka_brokers', action='store',
                           help='List of Kafka brokers')
 
     # SQL commands
     sql_parser = subparsers.add_parser('sql', help='Write to SQL database')
     sql_parser.add_argument('-d', '--driver', required=False, dest='sql_driver', action='store',
-                            help='SQL Driver ("mysql" or "postgres")')
+                            help='SQL database type ("mysql" or "postgres")')
     sql_parser.add_argument('-sh', '--host', required=True, dest='sql_host', action='store',
-                            help='DB Host IP.')
+                            help='DB Host IP')
     sql_parser.add_argument('-p', '--port', dest='sql_port', type=int, action='store',
-                            help='MySQL or PostgreSQL port. Needed only if different than default ones.')
+                            help='MySQL or PostgreSQL port. Needed only if different than default ones')
     sql_parser.add_argument('-db', '--database', required=True, dest='sql_database', action='store',
-                            help='MySQL or PostgreSQL database.')
+                            help='MySQL or PostgreSQL database')
     sql_parser.add_argument('-u', '--username', required=True, dest='sql_username', action='store',
-                            help='MySQL or PostgreSQL username.')
+                            help='MySQL or PostgreSQL username')
     sql_parser.add_argument('-pw', '--password', required=True, dest='sql_password', action='store',
-                            help='MySQL or PostgreSQL password.')
+                            help='MySQL or PostgreSQL password')
     sql_parser.add_argument('-n', '--number-lines', dest='num_lines', type=int, default=10, action='store',
                             help='Number of lines to generate (default: 10)')
     sql_parser.add_argument('-s', '--sleep-loop', dest='seconds', type=float, default=0.0, action='store',
-                            help='Write every SECONDS seconds. If SECONDS>0 infinite loop (default:0.0)')
+                            help='Write every SECONDS seconds. If SECONDS>0 it will produce an infinite loop (default:0.0)')
 
     print(parser.parse_args())
     args = parser.parse_args()
