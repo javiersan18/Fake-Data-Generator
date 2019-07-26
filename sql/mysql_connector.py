@@ -21,6 +21,10 @@ class MySQLConnector:
         self.cursor.execute(query)
         self.connection.commit()
 
+    def insert_query(self, query, values):
+        self.cursor.execute(query, values)
+        self.connection.commit()
+
     def close(self):
         self.cursor.close()
         self.connection.close()

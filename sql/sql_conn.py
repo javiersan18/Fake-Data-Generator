@@ -30,3 +30,14 @@ class SQLConnector:
 
     def query_exec(self, query):
         self.conn.exec_query(query)
+
+    def insert_exec(self, query, values):
+        self.conn.insert_query(query, values)
+
+    def create_table(self):
+        with open('./sql/queries/create_table_' + self.driver + '.sql') as f:
+            create_table_query = ""
+            for line in f:
+                create_table_query += line
+            #print(create_table_query)
+            self.query_exec(create_table_query)

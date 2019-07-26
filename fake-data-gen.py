@@ -73,12 +73,14 @@ def main():
         from generator.templates.apache_logs_template import ApacheLogsTemplate
         gen = DataGenerator(ApacheLogsTemplate(type="CLF"))
 
-        while infinite:
+        while loop:
             for i in range(args.num_lines):
                 f.write(gen.generate())
                 f.flush()
             if infinite:
                 time.sleep(args.seconds)
+            else:
+                break
 
     # Generate data to send to Kafka
     elif 'kafka_topic' in args:
@@ -98,12 +100,16 @@ def main():
         from generator.templates.credit_card_template import CreditCardTemplate
         gen = DataGenerator(CreditCardTemplate(delimiter=","))
 
-        while infinite:
+        while True:
             for i in range(args.num_lines):
                 producer.send(topic=topic, value=gen.generate(), flush=False)
             producer.flush(True)
             if infinite:
                 time.sleep(args.seconds)
+            else:
+                break
+
+    # Generate data to insert into SQL database
     else:
         driver = args.sql_driver
         host = args.sql_host
@@ -114,16 +120,21 @@ def main():
 
         sql_conn = SQLConnector(driver=driver, host=host, port=port, database=database, username=username,
                                 password=password)
+        sql_conn.create_table()
 
         from generator.templates.credit_card_template import CreditCardTemplate
-        gen = DataGenerator(CreditCardTemplate(delimiter=","))
+        gen = DataGenerator(CreditCardTemplate(format="json"))
 
-        while infinite:
+        while True:
             for i in range(args.num_lines):
-                query = 'INSERT ...'
-                sql_conn.query_exec(query)
+                query = ("INSERT INTO credit_cards_example "
+                         "(owner_name, iban, credit_card_number, credit_card_provider) "
+                         "VALUES (%(owner_name)s, %(iban)s, %(credit_card_number)s, %(credit_card_provider)s)")
+                sql_conn.insert_exec(query=query, values=gen.generate())
             if infinite:
                 time.sleep(args.seconds)
+            else:
+                break
 
 
 if __name__ == "__main__":
