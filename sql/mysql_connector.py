@@ -6,7 +6,7 @@ class MySQLConnector:
 
     def __init__(self, config):
         try:
-            print('Connecting to the PostgreSQL database...')
+            print('Connecting to the MySQL database...')
             self.connection = mysql.connector.connect(**config)
             self.cursor = self.connection.cursor()
         except mysql.connector.Error as err:

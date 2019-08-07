@@ -74,7 +74,7 @@ def main():
         from generator.templates.apache_logs_template import ApacheLogsTemplate
         gen = DataGenerator(ApacheLogsTemplate(type="CLF"))
 
-        while loop:
+        while True:
             for i in range(args.num_lines):
                 f.write(gen.generate())
                 f.flush()
