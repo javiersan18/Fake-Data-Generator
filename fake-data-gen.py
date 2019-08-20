@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import os
 import time
 import argparse
 from kafka.producer import Producer
@@ -14,6 +15,8 @@ def main():
     log_parser = subparsers.add_parser('log', help='Generate Apache Logs')
     log_parser.add_argument('-o', '--output-path', required=True, dest='log_file_path', action='store', type=str,
                             help='Log destination file path')
+    log_parser.add_argument('-of', '--output-file', required=False, dest='log_file_name', action='store', type=str,
+                            help='If indicated, log file will be created with this name, otherwise will be auto generated')
     log_parser.add_argument('-n', '--number-lines', dest='num_lines', type=int, default=10, action='store',
                             help='Number of lines to generate (default: 10)')
     log_parser.add_argument('-s', '--sleep-loop', dest='seconds', type=float, default=0.0, action='store',
@@ -67,8 +70,15 @@ def main():
     # Generate LOGS
     if 'log_file_path' in args:
 
-        timestr = time.strftime('%Y%m%d-%H%M%S')
-        output_file_name = 'access_log_' + timestr + '.log'
+        if args.log_file_name is not None:
+            output_file_name = args.log_file_name
+        else:
+            timestr = time.strftime('%Y%m%d-%H%M%S')
+            output_file_name = 'access_log_' + timestr + '.log'
+
+        if not os.path.exists(args.log_file_path):
+            os.makedirs(args.log_file_path)
+
         f = open(args.log_file_path + '/' + output_file_name, 'w')
 
         from generator.templates.apache_logs_template import ApacheLogsTemplate
